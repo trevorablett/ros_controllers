@@ -397,10 +397,16 @@ update(const ros::Time& time, const ros::Duration& period)
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {
-    // Non-realtime safe, but should never happen under normal operation
-    ROS_ERROR_NAMED(name_,
-                    "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
-    return;
+    // If the difference is small, use the first trajectoy segment.
+    if (!curr_traj.empty() && curr_traj.front().startTime() - time_data.uptime.toSec() < period.toSec()) {
+      segment_it = curr_traj.begin();
+    }
+    else {
+      // Non-realtime safe, but should never happen under normal operation
+      ROS_ERROR_NAMED(name_,
+                      "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+      return;
+    }
   }
 
   // Update current state and state error
